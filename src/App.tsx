@@ -195,7 +195,7 @@ export default function App() {
         }
       }
 
-      const csvContent = getCSVString(activeFile.data);
+      const csvContent = getCSVString(getGridData());
 
       if (handle) {
         // Query / Request readwrite permission
@@ -342,12 +342,39 @@ export default function App() {
     };
   }, [handleFileUpload]);
 
-  const updateActiveFileData = (data: any[], columns: any[]) => {
+  // Read current data from AG Grid API just-in-time (save / export).
+  // Using this instead of syncing on every cell change preserves the undo stack.
+  const getGridData = useCallback((): any[] => {
+    if (!gridApiRef.current) return activeFile?.data ?? [];
+    const rows: any[] = [];
+    gridApiRef.current.forEachNode(node => rows.push(node.data));
+    return rows;
+  }, [gridApiRef, activeFile]);
+
+  // Called by CsvGrid whenever a cell is edited — just marks dirty.
+  const handleGridDirty = useCallback(() => {
     setAppState(prev => ({
       ...prev,
-      files: prev.files.map(f => f.id === prev.activeFileId ? { ...f, data, columns, lastModified: Date.now(), isDirty: true } : f)
+      files: prev.files.map(f =>
+        f.id === prev.activeFileId ? { ...f, lastModified: Date.now(), isDirty: true } : f
+      )
     }));
-  };
+  }, []);
+
+  // Called by CsvGrid after row drag — flush row order back to state.
+  const handleRowDragEnd = useCallback(() => {
+    if (!gridApiRef.current || !activeFile) return;
+    const rows: any[] = [];
+    gridApiRef.current.forEachNode(node => rows.push(node.data));
+    setAppState(prev => ({
+      ...prev,
+      files: prev.files.map(f =>
+        f.id === prev.activeFileId
+          ? { ...f, data: rows, lastModified: Date.now(), isDirty: true }
+          : f
+      )
+    }));
+  }, [gridApiRef, activeFile]);
 
   const closeTab = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -415,7 +442,11 @@ export default function App() {
     });
     
     if (replaceCount > 0) {
-      updateActiveFileData(newData, activeFile.columns);
+      // Push replaced rows directly into the grid to keep AG Grid's undo stack intact.
+      if (gridApiRef.current) {
+        gridApiRef.current.applyTransaction({ update: newData });
+      }
+      handleGridDirty();
       setIsFindReplaceOpen(false);
       showToast(`Replaced ${replaceCount} row(s) successfully`, 'success');
     } else {
@@ -508,26 +539,26 @@ export default function App() {
             {activeFile && (
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#363636] rounded-md shadow-lg border border-gray-100 dark:border-[#4b4b4b] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                 <div className="py-1 flex flex-col">
-                  <button onClick={() => handleAction(() => exportToCSV(activeFile.data, activeFile.name), 'Exported as CSV')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
+                  <button onClick={() => handleAction(() => exportToCSV(getGridData(), activeFile.name), 'Exported as CSV')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
                     <TableIcon size={16} /> CSV
                   </button>
-                  <button onClick={() => handleAction(() => exportToExcel(activeFile.data, activeFile.name), 'Exported as Excel')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
+                  <button onClick={() => handleAction(() => exportToExcel(getGridData(), activeFile.name), 'Exported as Excel')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
                     <TableIcon size={16} /> Excel (.xlsx)
                   </button>
-                  <button onClick={() => handleAction(() => exportToJSON(activeFile.data, activeFile.name), 'Exported as JSON')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
+                  <button onClick={() => handleAction(() => exportToJSON(getGridData(), activeFile.name), 'Exported as JSON')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
                     <FileJson size={16} /> JSON
                   </button>
-                  <button onClick={() => handleAction(() => exportToMarkdown(activeFile.data, activeFile.columns.map(c => c.field), activeFile.name), 'Exported as Markdown')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
+                  <button onClick={() => handleAction(() => exportToMarkdown(getGridData(), activeFile.columns.map(c => c.field), activeFile.name), 'Exported as Markdown')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
                     <FileCode2 size={16} /> Markdown
                   </button>
                   <div className="h-px bg-gray-200 dark:bg-[#4b4b4b] my-1"></div>
-                  <button onClick={() => handleAction(() => copyToClipboardAsCSV(activeFile.data), 'CSV copied to clipboard')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
+                  <button onClick={() => handleAction(() => copyToClipboardAsCSV(getGridData()), 'CSV copied to clipboard')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
                     <Copy size={16} /> Copy CSV
                   </button>
-                  <button onClick={() => handleAction(() => copyToClipboardAsMarkdown(activeFile.data, activeFile.columns.map(c => c.field)), 'Markdown copied to clipboard')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
+                  <button onClick={() => handleAction(() => copyToClipboardAsMarkdown(getGridData(), activeFile.columns.map(c => c.field)), 'Markdown copied to clipboard')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
                     <Copy size={16} /> Copy as Markdown
                   </button>
-                  <button onClick={() => handleAction(() => copyToGoogleSheets(activeFile.data, activeFile.columns.map(c => c.field)), 'Copied for Google Sheets')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
+                  <button onClick={() => handleAction(() => copyToGoogleSheets(getGridData(), activeFile.columns.map(c => c.field)), 'Copied for Google Sheets')} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#2a3c49] text-left text-sm w-full cursor-pointer">
                     <Copy size={16} /> Copy for Sheets
                   </button>
                 </div>
@@ -606,7 +637,8 @@ export default function App() {
           <div className="w-full h-full p-2">
              <CsvGrid 
                 file={activeFile} 
-                onChange={updateActiveFileData} 
+                onDirty={handleGridDirty}
+                onRowDragEnd={handleRowDragEnd}
                 gridApiRef={gridApiRef}
                 searchQuery={searchQuery}
                 theme={theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme}

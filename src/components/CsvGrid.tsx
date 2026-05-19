@@ -7,7 +7,8 @@ const modules = [AllCommunityModule];
 
 interface CsvGridProps {
   file: CsvFile;
-  onChange: (data: any[], columns: any[]) => void;
+  onDirty: () => void;
+  onRowDragEnd: () => void;
   gridApiRef: React.MutableRefObject<GridApi | null>;
   searchQuery?: string;
   theme?: string;
@@ -18,8 +19,12 @@ interface CsvGridProps {
  * Supports features like undo/redo, row dragging, search filtering,
  * and handles horizontal scrolling automatically when number of columns
  * multiplied by minWidth exceeds the container width.
+ *
+ * Data is owned internally by AG Grid so that undoRedoCellEditing works
+ * correctly. The parent reads data from gridApiRef just-in-time (save/export)
+ * rather than on every cell change which would reset the undo stack.
  */
-export const CsvGrid: React.FC<CsvGridProps> = ({ file, onChange, gridApiRef, searchQuery, theme }) => {
+export const CsvGrid: React.FC<CsvGridProps> = ({ file, onDirty, onRowDragEnd, gridApiRef, searchQuery, theme }) => {
   const gridRef = useRef<AgGridReact>(null);
 
   const gridTheme = useMemo(() => {
@@ -66,21 +71,16 @@ export const CsvGrid: React.FC<CsvGridProps> = ({ file, onChange, gridApiRef, se
     }
   }, [gridApiRef, searchQuery]);
 
-  const onCellValueChanged = useCallback(() => {
-    if (gridApiRef.current) {
-      const rowData: any[] = [];
-      gridApiRef.current.forEachNode(node => rowData.push(node.data));
-      onChange(rowData, file.columns); // notify parent about data change
-    }
-  }, [gridApiRef, onChange, file.columns]);
+  // Only notify parent that data is dirty — do NOT push row data here.
+  // Pushing data on every cell change would reset AG Grid's undo stack.
+  const handleCellValueChanged = useCallback(() => {
+    onDirty();
+  }, [onDirty]);
 
-  const onRowDragEnd = useCallback(() => {
-    if (gridApiRef.current) {
-      const rowData: any[] = [];
-      gridApiRef.current.forEachNode(node => rowData.push(node.data));
-      onChange(rowData, file.columns); 
-    }
-  }, [gridApiRef, onChange, file.columns]);
+  // Row drag re-orders data; flush back to parent and mark dirty.
+  const handleRowDragEnd = useCallback(() => {
+    onRowDragEnd();
+  }, [onRowDragEnd]);
 
   useEffect(() => {
     if (gridApiRef.current && searchQuery !== undefined) {
@@ -99,11 +99,11 @@ export const CsvGrid: React.FC<CsvGridProps> = ({ file, onChange, gridApiRef, se
           defaultColDef={defaultColDef}
           rowDragManaged={true}
           animateRows={true}
-          undoRedoCellEditing={true} // Enable Undo / Redo
+          undoRedoCellEditing={true}
           undoRedoCellEditingLimit={20}
           onGridReady={onGridReady}
-          onCellValueChanged={onCellValueChanged}
-          onRowDragEnd={onRowDragEnd}
+          onCellValueChanged={handleCellValueChanged}
+          onRowDragEnd={handleRowDragEnd}
           suppressScrollOnNewData={true}
         />
       </AgGridProvider>
