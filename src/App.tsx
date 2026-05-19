@@ -78,11 +78,6 @@ export default function App() {
     try {
       await action();
       showToast(successMsg, 'success');
-      // Mark the active file as clean upon successful export/copy
-      setAppState(prev => ({
-        ...prev,
-        files: prev.files.map(f => f.id === prev.activeFileId ? { ...f, isDirty: false } : f)
-      }));
     } catch (err: any) {
       showToast(`Failed: ${err.message || 'Unknown error'}`, 'error');
     }
