@@ -231,17 +231,35 @@ export default function App() {
     }
   }, [activeFile, showToast]);
 
-  // Handle Ctrl+S keyboard shortcut
+  // Global keyboard shortcuts: Ctrl/Cmd+S (save), Ctrl/Cmd+Z (undo), Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z (redo)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+
+      if (e.key === 's') {
         e.preventDefault();
         handleSaveFile();
+        return;
+      }
+
+      // Undo: Ctrl+Z / Cmd+Z (but NOT Ctrl+Shift+Z which is redo)
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (gridApiRef.current) gridApiRef.current.undoCellEditing();
+        return;
+      }
+
+      // Redo: Ctrl+Y / Cmd+Y  OR  Ctrl+Shift+Z / Cmd+Shift+Z
+      if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+        e.preventDefault();
+        if (gridApiRef.current) gridApiRef.current.redoCellEditing();
+        return;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSaveFile]);
+  }, [handleSaveFile, gridApiRef]);
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
