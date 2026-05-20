@@ -649,6 +649,21 @@ export default function App() {
                 <p>or drag and drop here</p>
                 <p className="text-xs mt-1 opacity-70">You can also paste raw CSV data directly</p>
               </div>
+
+              {/* Paste Keyboard Shortcuts Indicator */}
+              <div className="flex items-center justify-center gap-6 mt-2">
+                <div className="flex items-center gap-1.5">
+                  <kbd className="px-2.5 py-1.5 bg-white dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg shadow-sm text-xs font-bold text-gray-800 dark:text-gray-200 font-mono select-none">Ctrl</kbd>
+                  <span className="text-gray-400 dark:text-gray-600 text-xs font-bold">+</span>
+                  <kbd className="px-2.5 py-1.5 bg-white dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg shadow-sm text-xs font-bold text-gray-800 dark:text-gray-200 font-mono select-none">V</kbd>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <kbd className="px-2.5 py-1.5 bg-white dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg shadow-sm text-xs font-bold text-gray-800 dark:text-gray-200 font-mono select-none">⌘</kbd>
+                  <span className="text-gray-400 dark:text-gray-600 text-xs font-bold">+</span>
+                  <kbd className="px-2.5 py-1.5 bg-white dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg shadow-sm text-xs font-bold text-gray-800 dark:text-gray-200 font-mono select-none">V</kbd>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
