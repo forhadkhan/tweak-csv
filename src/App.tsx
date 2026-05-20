@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  FileUp, 
-  Download, 
-  Monitor, 
-  Moon, 
-  Sun, 
-  Plus, 
-  X, 
+import {
+  FileUp,
+  Download,
+  Monitor,
+  Moon,
+  Sun,
+  Plus,
+  X,
   Search,
   Undo,
   Redo,
@@ -21,20 +21,20 @@ import {
   Save
 } from 'lucide-react';
 import { CsvGrid } from './components/CsvGrid';
-import { 
-  AppState, 
-  CsvFile, 
-  loadState, 
-  saveState, 
-  createNewFile 
+import {
+  AppState,
+  CsvFile,
+  loadState,
+  saveState,
+  createNewFile
 } from './lib/storage';
-import { 
-  parseFileToCSV, 
-  parseRawCsvString, 
-  exportToCSV, 
-  exportToExcel, 
-  exportToJSON, 
-  copyToGoogleSheets, 
+import {
+  parseFileToCSV,
+  parseRawCsvString,
+  exportToCSV,
+  exportToExcel,
+  exportToJSON,
+  copyToGoogleSheets,
   copyToClipboardAsCSV,
   exportToMarkdown,
   copyToClipboardAsMarkdown,
@@ -55,13 +55,13 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>('system');
   const [isDragging, setIsDragging] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const [isFindReplaceOpen, setIsFindReplaceOpen] = useState(false);
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [targetColumn, setTargetColumn] = useState('');
   const [matchCase, setMatchCase] = useState(false);
-  
+
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({ show: false, message: '', type: 'success' });
 
   const gridApiRef = useRef<GridApi | null>(null);
@@ -99,7 +99,7 @@ export default function App() {
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
-    
+
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       root.classList.add(systemTheme);
@@ -263,7 +263,7 @@ export default function App() {
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    
+
     const newFiles: CsvFile[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -291,7 +291,7 @@ export default function App() {
   const handlePaste = useCallback(async (event: ClipboardEvent) => {
     const pastedText = event.clipboardData?.getData('text');
     if (!pastedText) return;
-    
+
     try {
       const { data, columns } = parseRawCsvString(pastedText);
       const newFile = createNewFile(`Pasted_Data_${Date.now()}.csv`, data, columns);
@@ -426,29 +426,29 @@ export default function App() {
 
   const handleReplace = () => {
     if (!activeFile || !findText) return;
-    
+
     let replaceCount = 0;
-    
+
     const newData = activeFile.data.map((row: any) => {
       let modified = false;
       const newRow = { ...row };
-      
+
       const columnsToSearch = targetColumn ? [targetColumn] : activeFile.columns.map((c: any) => c.field);
-      
+
       for (const col of columnsToSearch) {
         if (newRow[col] !== null && newRow[col] !== undefined) {
           const originalStr = String(newRow[col]);
-          
+
           let newStr = originalStr;
           if (matchCase) {
-             if (originalStr.includes(findText)) {
-                newStr = originalStr.replaceAll(findText, replaceText);
-             }
+            if (originalStr.includes(findText)) {
+              newStr = originalStr.replaceAll(findText, replaceText);
+            }
           } else {
-             const regex = new RegExp(escapeRegExp(findText), 'gi');
-             newStr = originalStr.replace(regex, replaceText);
+            const regex = new RegExp(escapeRegExp(findText), 'gi');
+            newStr = originalStr.replace(regex, replaceText);
           }
-          
+
           if (newStr !== originalStr) {
             newRow[col] = newStr;
             modified = true;
@@ -458,7 +458,7 @@ export default function App() {
       if (modified) replaceCount++;
       return newRow;
     });
-    
+
     if (replaceCount > 0) {
       // Push replaced rows directly into the grid to keep AG Grid's undo stack intact.
       if (gridApiRef.current) {
@@ -477,7 +477,7 @@ export default function App() {
   };
 
   return (
-    <div 
+    <div
       className="flex flex-col h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-[#2b2b2b] dark:text-gray-100 transition-colors"
     >
       {/* Header Pipeline */}
@@ -492,9 +492,9 @@ export default function App() {
         {activeFile && (
           <div className="flex items-center bg-gray-100 dark:bg-[#2b2b2b] rounded-md px-2 py-1 flex-1 min-w-[150px] w-full sm:max-w-xs md:max-w-sm sm:mx-4 dark:border dark:border-[#4b4b4b] order-3 sm:order-2">
             <Search size={16} className="text-gray-500 mr-2 shrink-0" />
-            <input 
-              type="text" 
-              placeholder="Search in file..." 
+            <input
+              type="text"
+              placeholder="Search in file..."
               className="bg-transparent border-none outline-none w-full text-sm placeholder:text-gray-400"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -511,7 +511,7 @@ export default function App() {
               <button onClick={handleRedo} className="p-1.5 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-[#2a3c49] cursor-pointer" title="Redo">
                 <Redo size={18} />
               </button>
-              
+
               <button onClick={() => setIsFindReplaceOpen(true)} className="p-1.5 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-[#2a3c49] cursor-pointer" title="Find and Replace">
                 <Replace size={18} />
               </button>
@@ -527,15 +527,14 @@ export default function App() {
           <a href="https://github.com/forhadkhan/tweak-csv" target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-[#2a3c49] cursor-pointer hidden sm:flex" title="View Source on GitHub">
             <Github size={18} />
           </a>
-          
+
           {activeFile && (
-            <button 
+            <button
               onClick={handleSaveFile}
-              className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                activeFile.isDirty
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-[#2b2b2b] dark:hover:bg-[#4b4b4b] dark:text-gray-200 border border-gray-200 dark:border-[#4b4b4b]'
-              }`}
+              className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${activeFile.isDirty
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-[#2b2b2b] dark:hover:bg-[#4b4b4b] dark:text-gray-200 border border-gray-200 dark:border-[#4b4b4b]'
+                }`}
               title={activeFile.isDirty ? "Save changes to source file (Ctrl+S)" : "No unsaved changes"}
             >
               <Save size={16} /> <span className="hidden sm:inline">Save</span>
@@ -543,14 +542,13 @@ export default function App() {
           )}
 
           <div className="relative group">
-            <button 
+            <button
               disabled={!activeFile}
               title={!activeFile ? "To export, please open a file" : undefined}
-              className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                activeFile 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer' 
-                  : 'bg-gray-200 dark:bg-[#3d3d3d] text-gray-400 dark:text-gray-500 cursor-not-allowed'
-              }`}
+              className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeFile
+                ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                : 'bg-gray-200 dark:bg-[#3d3d3d] text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                }`}
             >
               <Download size={16} /> <span className="hidden sm:inline">Export</span>
             </button>
@@ -585,30 +583,29 @@ export default function App() {
           </div>
         </div>
       </header>
- 
+
       {/* Tabs */}
       {appState.files.length > 0 && (
         <div className="flex bg-gray-100 dark:bg-[#363636] border-b border-gray-200 dark:border-[#4b4b4b] overflow-x-auto shrink-0 scrollbar-hide">
           {appState.files.map(file => (
-            <div 
+            <div
               key={file.id}
               onClick={() => setAppState(prev => ({ ...prev, activeFileId: file.id }))}
-              className={`flex items-center gap-2 px-4 py-2 cursor-pointer border-r border-gray-200 dark:border-[#4b4b4b] text-sm whitespace-nowrap select-none transition-colors ${
-                appState.activeFileId === file.id 
-                  ? 'bg-white dark:bg-[#2b2b2b] font-medium border-b-2 border-b-blue-600 border-t-2 border-t-transparent' 
-                  : 'text-gray-500 hover:bg-gray-200 dark:hover:bg-[#2a3c49] hover:text-gray-700 dark:hover:text-gray-300 border-t-2 border-t-transparent'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 cursor-pointer border-r border-gray-200 dark:border-[#4b4b4b] text-sm whitespace-nowrap select-none transition-colors ${appState.activeFileId === file.id
+                ? 'bg-white dark:bg-[#2b2b2b] font-medium border-b-2 border-b-blue-600 border-t-2 border-t-transparent'
+                : 'text-gray-500 hover:bg-gray-200 dark:hover:bg-[#2a3c49] hover:text-gray-700 dark:hover:text-gray-300 border-t-2 border-t-transparent'
+                }`}
             >
               <span>{file.name}{file.isDirty ? ' *' : ''}</span>
-              <button 
-                onClick={(e) => closeTab(file.id, e)} 
+              <button
+                onClick={(e) => closeTab(file.id, e)}
                 className="p-0.5 rounded-full hover:bg-gray-300 dark:hover:bg-[#4b4b4b] text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 cursor-pointer"
               >
                 <X size={14} />
               </button>
             </div>
           ))}
-          <button 
+          <button
             className="flex items-center justify-center px-4 hover:bg-gray-200 dark:hover:bg-[#2a3c49] text-gray-500 cursor-pointer"
             onClick={handleOpenFile}
           >
@@ -619,7 +616,7 @@ export default function App() {
 
       {/* Main Workspace */}
       <main className="flex-1 relative overflow-hidden flex flex-col items-center justify-center bg-white dark:bg-[#2b2b2b]">
-        
+
         {isDragging && (
           <div className="absolute inset-0 z-50 bg-blue-50/90 dark:bg-blue-900/40 backdrop-blur-sm border-4 border-dashed border-blue-500 flex flex-col items-center justify-center text-blue-600 dark:text-blue-400">
             <FileUp size={64} className="mb-4 animate-bounce" />
@@ -634,58 +631,64 @@ export default function App() {
             </div>
             <h2 className="text-2xl font-bold mb-2">Welcome to TweakCSV</h2>
             <p className="text-gray-500 dark:text-gray-400 mb-8">
-              A lightning-fast, client-side data editor. Everything happens in your browser—no backend, full privacy.
+              A lightning-fast, client-side data editor. Everything happens in your browser; no backend, full privacy.
             </p>
-            
+
             <div className="flex flex-col gap-4 w-full">
-              <button 
+              <button
                 onClick={handleOpenFile}
                 className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white w-full py-3 rounded-lg font-medium shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 <FileUp size={20} /> Open CSV File
               </button>
-              
-              <div className="bg-gray-50 dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg p-4 flex flex-col items-center text-sm text-gray-500 dark:text-gray-400 border-dashed">
-                <p>or drag and drop here</p>
-                <p className="text-xs mt-1 opacity-70">You can also paste raw CSV data directly</p>
-              </div>
 
-              {/* Paste Keyboard Shortcuts Indicator */}
-              <div className="flex items-center justify-center gap-6 mt-2">
-                <div className="flex items-center gap-1.5">
-                  <kbd className="px-2.5 py-1.5 bg-white dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg shadow-sm text-xs font-bold text-gray-800 dark:text-gray-200 font-mono select-none">Ctrl</kbd>
-                  <span className="text-gray-400 dark:text-gray-600 text-xs font-bold">+</span>
-                  <kbd className="px-2.5 py-1.5 bg-white dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg shadow-sm text-xs font-bold text-gray-800 dark:text-gray-200 font-mono select-none">V</kbd>
+              <div className="bg-gray-100 dark:bg-[#363636]/40 border border-gray-200 dark:border-[#4b4b4b] rounded-xl p-5 flex flex-col items-center text-sm text-gray-500 dark:text-gray-400 border-dashed w-full select-none shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]">
+                <p className="font-semibold text-gray-600 dark:text-gray-300">or drag and drop here</p>
+
+                <div className="w-full flex items-center justify-center gap-2.5 my-3.5">
+                  <div className="h-px bg-gray-200/80 dark:bg-[#4b4b4b]/60 flex-1"></div>
+                  <span className="text-[10px] text-gray-400/80 dark:text-gray-500 font-bold uppercase tracking-wider select-none">or paste raw CSV data</span>
+                  <div className="h-px bg-gray-200/80 dark:bg-[#4b4b4b]/60 flex-1"></div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <kbd className="px-2.5 py-1.5 bg-white dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg shadow-sm text-xs font-bold text-gray-800 dark:text-gray-200 font-mono select-none">⌘</kbd>
-                  <span className="text-gray-400 dark:text-gray-600 text-xs font-bold">+</span>
-                  <kbd className="px-2.5 py-1.5 bg-white dark:bg-[#363636] border border-gray-200 dark:border-[#4b4b4b] rounded-lg shadow-sm text-xs font-bold text-gray-800 dark:text-gray-200 font-mono select-none">V</kbd>
+                <div className="flex items-center gap-5">
+                  <div className="flex items-center gap-1.5">
+                    <kbd className="px-2 py-1 bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-[#4b4b4b] rounded-md shadow-xs text-xs font-semibold text-gray-800 dark:text-gray-200 font-mono select-none">Ctrl</kbd>
+                    <span className="text-gray-400 dark:text-gray-600 text-xs font-bold">+</span>
+                    <kbd className="px-2 py-1 bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-[#4b4b4b] rounded-md shadow-xs text-xs font-semibold text-gray-800 dark:text-gray-200 font-mono select-none">V</kbd>
+                  </div>
+
+                  <span className="text-gray-300 dark:text-gray-600 text-xs">/</span>
+
+                  <div className="flex items-center gap-1.5">
+                    <kbd className="px-2 py-1 bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-[#4b4b4b] rounded-md shadow-xs text-xs font-semibold text-gray-800 dark:text-gray-200 font-mono select-none">⌘</kbd>
+                    <span className="text-gray-400 dark:text-gray-600 text-xs font-bold">+</span>
+                    <kbd className="px-2 py-1 bg-white dark:bg-[#2b2b2b] border border-gray-200 dark:border-[#4b4b4b] rounded-md shadow-xs text-xs font-semibold text-gray-800 dark:text-gray-200 font-mono select-none">V</kbd>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="w-full h-full p-2">
-             <CsvGrid 
-                file={activeFile} 
-                onDirty={handleGridDirty}
-                onRowDragEnd={handleRowDragEnd}
-                gridApiRef={gridApiRef}
-                searchQuery={searchQuery}
-                theme={theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme}
-             />
+            <CsvGrid
+              file={activeFile}
+              onDirty={handleGridDirty}
+              onRowDragEnd={handleRowDragEnd}
+              gridApiRef={gridApiRef}
+              searchQuery={searchQuery}
+              theme={theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme}
+            />
           </div>
         )}
 
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          className="hidden" 
-          accept=".csv,text/csv" 
-          multiple 
-          onChange={(e) => handleFileUpload(e.target.files)} 
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept=".csv,text/csv"
+          multiple
+          onChange={(e) => handleFileUpload(e.target.files)}
         />
 
         {isFindReplaceOpen && activeFile && (
@@ -707,19 +710,19 @@ export default function App() {
                   <input type="text" className="w-full px-3 py-2 border rounded border-gray-300 dark:border-[#4b4b4b] bg-transparent text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500" value={replaceText} onChange={e => setReplaceText(e.target.value)} />
                 </div>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                   <div className="flex-1 w-full">
-                     <label className="block text-sm font-medium mb-1">Target Column</label>
-                     <select className="w-full px-3 py-2 border rounded border-gray-300 dark:border-[#4b4b4b] bg-white dark:bg-[#2b2b2b] text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500" value={targetColumn} onChange={e => setTargetColumn(e.target.value)}>
-                       <option value="">All Columns</option>
-                       {activeFile.columns.map(c => (
-                         <option key={c.field} value={c.field}>{c.headerName || c.field}</option>
-                       ))}
-                     </select>
-                   </div>
-                   <div className="flex items-center gap-2 sm:mt-6">
-                     <input type="checkbox" id="matchCase" checked={matchCase} onChange={e => setMatchCase(e.target.checked)} className="cursor-pointer" />
-                     <label htmlFor="matchCase" className="text-sm cursor-pointer">Match Case</label>
-                   </div>
+                  <div className="flex-1 w-full">
+                    <label className="block text-sm font-medium mb-1">Target Column</label>
+                    <select className="w-full px-3 py-2 border rounded border-gray-300 dark:border-[#4b4b4b] bg-white dark:bg-[#2b2b2b] text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500" value={targetColumn} onChange={e => setTargetColumn(e.target.value)}>
+                      <option value="">All Columns</option>
+                      {activeFile.columns.map(c => (
+                        <option key={c.field} value={c.field}>{c.headerName || c.field}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2 sm:mt-6">
+                    <input type="checkbox" id="matchCase" checked={matchCase} onChange={e => setMatchCase(e.target.checked)} className="cursor-pointer" />
+                    <label htmlFor="matchCase" className="text-sm cursor-pointer">Match Case</label>
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-4 sm:mt-6">
                   <button onClick={() => setIsFindReplaceOpen(false)} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-[#2a3c49] rounded cursor-pointer">Cancel</button>
@@ -731,7 +734,7 @@ export default function App() {
             </div>
           </div>
         )}
-        
+
         {/* Toast Notification */}
         <div className={`fixed bottom-4 right-4 z-[60] transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}>
           <div className={`flex items-center gap-2 px-4 py-3 rounded shadow-lg border ${toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400' : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400'}`}>
